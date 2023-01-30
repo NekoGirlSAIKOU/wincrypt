@@ -507,8 +507,11 @@ namespace Crypt
 
                     nReadTotal = 0;
 
-                    using (sout = new FileStream(Path.GetTempPath() + "\\" + Path.GetFileNameWithoutExtension(filename) + ".dcodetmp", FileMode.Create, FileAccess.Write))
+                    using (sout=null)
                     {
+                        if (filesToDecrypt == null || filesToDecrypt.IndexOf(fileNames[i]) != -1 || filesToDecrypt.Count==0)
+                            sout = new FileStream(outputPath + fileNames[i], FileMode.Create, FileAccess.Write);
+
                         while ((nReadTotal < fileLengths[i]) && !_bail)
                         {
                             if (isConsole)
@@ -531,27 +534,24 @@ namespace Crypt
                                 nRead = decStream.Read(buf, 0, (int)fileLengths[i] - nReadTotal);
                             if (0 == nRead) break;
 
-                            if (filesToDecrypt != null)
-                                if (filesToDecrypt.IndexOf(fileNames[i]) != -1 || filesToDecrypt.Count==0)
-                                    sout.Write(buf, 0, nRead);
-                            
+                            if (sout != null)
+                                sout.Write(buf, 0, nRead);
+
                             nReadTotal += nRead;
                         }
                         if (_bail)
                         {
                             decStream.Close();
-                            sout.Close();
+                            if (sout != null)
+                                sout.Close();
                             return;
                         }
                     }
                     if (filesToDecrypt != null)
                         if (filesToDecrypt.IndexOf(fileNames[i]) != -1)
                         {
-                            File.Move(Path.GetTempPath() + "\\" + Path.GetFileNameWithoutExtension(filename) + ".dcodetmp", outputPath + fileNames[i]);
                             filesToDecrypt.Remove(fileNames[i]);
                         }
-                        else
-                            File.Delete(Path.GetTempPath() + "\\" + Path.GetFileNameWithoutExtension(filename) + ".dcodetmp");
 
                 }
                 decStream.Close();
